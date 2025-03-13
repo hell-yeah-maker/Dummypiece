@@ -4,7 +4,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,7 +36,7 @@ jobs:
         run: |
           if [ ! -f "composer.json" ]; then
             echo "Creating composer.json in root directory"
-            cat > composer.json << EOF
+            cat > composer.json << 'EOF'
 {
   "name": "web-app",
   "description": "A PHP project",
