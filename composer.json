@@ -1,0 +1,7 @@
+{
+  "name": "demo-php",
+  "description": "A PHP project",
+  "require": {
+    "php": ">=8.0"
+  }
+}
