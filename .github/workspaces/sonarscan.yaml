@@ -1,0 +1,83 @@
+name: PHP CI/CD with SonarQube
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      # Set up PHP
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, xml, ctype, iconv
+          coverage: none
+      
+      # Enhanced debugging to locate composer.json
+      - name: Debug file structure
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Repository contents:"
+          ls -la
+          echo "Looking for composer.json:"
+          find . -name "composer.json" || echo "No composer.json found"
+      
+      # Create composer.json if it doesn't exist - FIXED SYNTAX
+      - name: Ensure composer.json exists
+        run: |
+          if [ ! -f "composer.json" ]; then
+            echo "Creating composer.json in root directory"
+            cat > composer.json << EOF
+{
+  "name": "web-app",
+  "description": "A PHP project",
+  "require": {
+    "php": ">=8.0"
+  }
+}
+EOF
+            echo "Created composer.json:"
+            cat composer.json
+          else
+            echo "composer.json already exists"
+          fi
+      
+      # Install Composer dependencies
+      - name: Install Composer dependencies
+        run: |
+          if [ -f "composer.json" ]; then
+            composer install --no-progress --no-suggest || composer install --no-progress
+          else
+            echo "❌ composer.json still not found after creation attempt! Exiting."
+            exit 1
+          fi
+      
+      # Run SonarQube Scan
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.organization=my-org
+            -Dsonar.projectKey=my-php-project
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      
+      # Check SonarQube Quality Gate
+      - name: SonarQube Quality Gate check
+        id: sonarqube-quality-gate-check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
