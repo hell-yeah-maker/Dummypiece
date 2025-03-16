@@ -1,7 +1,7 @@
 {
-  "name": "Dummypiece/demo-php",
-  "description": "A PHP project",
-  "require": {
-    "php": ">=8.0"
-  }
+    "name": "my-org/demo-php",
+    "description": "A PHP project",
+    "require": {
+        "php": ">=8.0"
+    }
 }
