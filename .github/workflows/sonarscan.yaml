@@ -22,11 +22,24 @@ jobs:
           echo "Checking connection to SonarQube server..."
           curl -I --connect-timeout 60 ${{ secrets.SONAR_HOST_URL }} || exit 1
 
-      - name: Ping SonarQube Server (if curl fails)
+      - name: Ping SonarQube Server
         shell: bash
         run: |
           echo "Pinging SonarQube server..."
           ping -c 4 $(echo "${{ secrets.SONAR_HOST_URL }}" | sed -e 's|https\?://||' -e 's|/.*||') || exit 1
+
+      - name: Check SonarQube Port
+        shell: bash
+        run: |
+          sudo apt-get install -y netcat
+          echo "Checking if SonarQube port is open..."
+          nc -zv $(echo "${{ secrets.SONAR_HOST_URL }}" | sed -e 's|https\?://||' -e 's|/.*||') 9000 || exit 1
+
+      - name: Test Direct Connection to SonarQube Server
+        shell: bash
+        run: |
+          echo "Testing direct connection to SonarQube server..."
+          curl --connect-timeout 60 --verbose ${{ secrets.SONAR_HOST_URL }}
 
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
