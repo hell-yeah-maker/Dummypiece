@@ -1,4 +1,4 @@
-name: Build
+name: Build and SonarQube Scan
 
 on:
   push:
@@ -7,48 +7,23 @@ on:
 
 jobs:
   build:
-    name: Build and analyze
-    runs-on: windows-latest
-    
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
 
-          fetch-depth: 0
-
-      - name: Check SonarQube Server Connection
-        shell: bash
+      - name: Set up Docker
         run: |
-          echo "Checking connection to SonarQube server..."
-          curl -I --connect-timeout 60 ${{ secrets.SONAR_HOST_URL }} || exit 1
+          docker-compose down
+          docker-compose up -d
 
-      - name: Ping SonarQube Server
-        shell: bash
+      - name: Wait for containers to start
+        run: sleep 10
+
+      - name: Test PHP app connection
         run: |
-          echo "Pinging SonarQube server..."
-          ping -c 4 $(echo "${{ secrets.SONAR_HOST_URL }}" | sed -e 's|https\?://||' -e 's|/.*||') || exit 1
-
-      - name: Check SonarQube Port
-        shell: bash
-        run: |
-          sudo apt-get install -y netcat
-          echo "Checking if SonarQube port is open..."
-          nc -zv $(echo "${{ secrets.SONAR_HOST_URL }}" | sed -e 's|https\?://||' -e 's|/.*||') 9000 || exit 1
-
-      - name: Test Direct Connection to SonarQube Server
-        shell: bash
-        run: |
-          echo "Testing direct connection to SonarQube server..."
-          curl --connect-timeout 60 --verbose ${{ secrets.SONAR_HOST_URL }}
-
-          fetch-depth: 0  # Shallow clones should be disabled for better analysis
-
-      - name: Check SonarQube Server Connection
-        run: |
-          echo "Checking connection to SonarQube server..."
-          curl -I --connect-timeout 500 ${{ secrets.SONAR_HOST_URL }} || exit 1
-
+          curl -I http://localhost:8080 || exit 1
 
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
@@ -57,7 +32,8 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
-            -Dsonar.scanner.socketTimeout=60000
+            -Dsonar.sources=./demo-php
+            -Dsonar.php.version=8.0
             -X
 
       - name: Check SonarQube Quality Gate
