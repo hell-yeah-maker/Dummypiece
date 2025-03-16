@@ -1,4 +1,4 @@
-name: Build and SonarQube Scan
+name: SonarQube Scan
 
 on:
   push:
@@ -6,38 +6,39 @@ on:
       - main
 
 jobs:
-  build:
+  sonarqube:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Docker
         run: |
-          docker-compose down
-          docker-compose up -d
+          docker --version
 
-      - name: Wait for containers to start
-        run: sleep 10
-
-      - name: Test PHP app connection
+      - name: Start SonarQube Docker container
         run: |
-          curl -I http://localhost:8080 || exit 1
+          docker run -d --name sonarqube -p 9000:9000 sonarqube
+          sleep 30 # Wait for SonarQube to start
 
-      - name: Run SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v4
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        with:
-          args: >
-            -Dsonar.sources=./demo-php
-            -Dsonar.php.version=8.0
-            -X
+      - name: Wait for SonarQube to be ready
+        run: |
+          until $(curl --output /dev/null --silent --head --fail http://localhost:9000); do
+            printf '.'
+            sleep 5
+          done
+          echo "SonarQube is ready"
 
-      - name: Check SonarQube Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@v1
-        timeout-minutes: 10
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Run SonarQube scanner
+        run: |
+          docker run --rm \
+            -e SONAR_HOST_URL="http://localhost:9000" \
+            -e SONAR_LOGIN="<YOUR_SONAR_TOKEN>" \
+            -v "$PWD:/usr/src" \
+            sonarsource/sonar-scanner-cli
+
+      - name: Stop SonarQube container
+        run: |
+          docker stop sonarqube
+          docker rm sonarqube
