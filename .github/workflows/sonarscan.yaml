@@ -14,6 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+
           fetch-depth: 0
 
       - name: Check SonarQube Server Connection
@@ -40,6 +41,14 @@ jobs:
         run: |
           echo "Testing direct connection to SonarQube server..."
           curl --connect-timeout 60 --verbose ${{ secrets.SONAR_HOST_URL }}
+
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+
+      - name: Check SonarQube Server Connection
+        run: |
+          echo "Checking connection to SonarQube server..."
+          curl -I --connect-timeout 500 ${{ secrets.SONAR_HOST_URL }} || exit 1
+
 
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
