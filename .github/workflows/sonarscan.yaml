@@ -11,20 +11,23 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      # ✅ Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+          fetch-depth: 0
 
-      # ✅ Step 2: Check SonarQube server connection
       - name: Check SonarQube Server Connection
         shell: bash
         run: |
           echo "Checking connection to SonarQube server..."
-          curl -I --connect-timeout 30 ${{ secrets.SONAR_HOST_URL }} || exit 1
+          curl -I --connect-timeout 60 ${{ secrets.SONAR_HOST_URL }} || exit 1
 
-      # ✅ Step 3: Run SonarQube scan
+      - name: Ping SonarQube Server (if curl fails)
+        shell: bash
+        run: |
+          echo "Pinging SonarQube server..."
+          ping -c 4 $(echo "${{ secrets.SONAR_HOST_URL }}" | sed -e 's|https\?://||' -e 's|/.*||') || exit 1
+
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
         env:
@@ -35,7 +38,6 @@ jobs:
             -Dsonar.scanner.socketTimeout=60000
             -X
 
-      # ✅ Step 4: Check SonarQube Quality Gate
       - name: Check SonarQube Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@v1
         timeout-minutes: 10
