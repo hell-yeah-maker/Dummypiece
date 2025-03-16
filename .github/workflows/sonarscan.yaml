@@ -14,7 +14,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+
+      - name: Check SonarQube Server Connection
+        run: |
+          echo "Checking connection to SonarQube server..."
+          curl -I --connect-timeout 10 ${{ secrets.SONAR_HOST_URL }} || exit 1
 
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
@@ -23,11 +28,11 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
-            -Dsonar.ws.timeout=6000
+            -Dsonar.scanner.socketTimeout=60000
+            -X
 
       - name: Check SonarQube Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@v1
         timeout-minutes: 10
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
