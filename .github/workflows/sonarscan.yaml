@@ -19,7 +19,7 @@ jobs:
       - name: Check SonarQube Server Connection
         run: |
           echo "Checking connection to SonarQube server..."
-          curl -I --connect-timeout 10 ${{ secrets.SONAR_HOST_URL }} || exit 1
+          curl -I --connect-timeout 500 ${{ secrets.SONAR_HOST_URL }} || exit 1
 
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
