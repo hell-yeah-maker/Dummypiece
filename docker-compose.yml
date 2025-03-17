@@ -4,14 +4,14 @@ services:
   php:
     build: .
     ports:
-      - "8080:80"
+      - "8081:80" # Changed to 8081 to avoid conflict with Jenkins
     volumes:
       - .:/var/www/html
 
   sonarqube:
     image: sonarqube
     ports:
-      - "9000:9000"
+      - "9000:9000" # Fixed indentation
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
       - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonarqube
