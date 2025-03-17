@@ -11,17 +11,47 @@ jobs:
 
     steps:
       - name: Checkout code
+
         uses: actions/checkout@v3
 
       - name: Set up Docker
         run: |
           docker --version
+        uses: actions/checkout@v4
+        with:
+
+          fetch-depth: 0      
+
 
       - name: Start SonarQube Docker container
         run: |
+
           docker run -d --name sonarqube -p 9000:9000 sonarqube
           sleep 60 # Increased to give SonarQube more time to initialize
 
       - name: Wait for SonarQube to be ready
         run: |
           echo
+
+          echo "Testing direct connection to SonarQube server..."
+          curl --connect-timeout 60 --verbose ${{ secrets.SONAR_HOST_URL }}
+
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis     
+
+
+      - name: Run SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.scanner.socketTimeout=60000
+            -X
+
+      - name: Check SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 10
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
