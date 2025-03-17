@@ -1,4 +1,4 @@
-name: Build
+name: SonarQube Scan
 
 on:
   push:
@@ -6,20 +6,33 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build and analyze
-    runs-on: windows-latest
-    
+  sonarqube:
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
+
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        run: |
+          docker --version
         uses: actions/checkout@v4
         with:
 
           fetch-depth: 0      
 
-      - name: Test Direct Connection to SonarQube Server
-        shell: bash
+
+      - name: Start SonarQube Docker container
         run: |
+
+          docker run -d --name sonarqube -p 9000:9000 sonarqube
+          sleep 60 # Increased to give SonarQube more time to initialize
+
+      - name: Wait for SonarQube to be ready
+        run: |
+          echo
+
           echo "Testing direct connection to SonarQube server..."
           curl --connect-timeout 60 --verbose ${{ secrets.SONAR_HOST_URL }}
 
@@ -41,3 +54,4 @@ jobs:
         timeout-minutes: 10
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
