@@ -20,7 +20,7 @@ jobs:
       - name: Start SonarQube
         run: |
           docker run -d --name sonarqube \
-            -p 9001:9000 \
+            -p 9000:9000 \
             -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
             -e SONAR_JAVA_OPTS="-Xmx2g -Xms2g" \
             sonarqube:lts
@@ -29,7 +29,7 @@ jobs:
         run: |
           echo "Waiting for SonarQube to start..."
           timeout=300
-          until curl -s -o /dev/null -w "%{http_code}" http://localhost:9001 | grep 200; do
+          until curl -s -o /dev/null -w "%{http_code}" http://localhost:9000 | grep 200; do
             echo "SonarQube is not ready yet..."
             sleep 5
             ((timeout--))
@@ -44,7 +44,7 @@ jobs:
       - name: Run SonarQube scanner
         run: |
           docker run --rm \
-            -e SONAR_HOST_URL="http://localhost:9001" \
+            -e SONAR_HOST_URL="http://localhost:9000" \
             -e SONAR_LOGIN="${{ secrets.SONAR_TOKEN }}" \
             -v "$PWD:/usr/src" \
             sonarsource/sonar-scanner-cli
