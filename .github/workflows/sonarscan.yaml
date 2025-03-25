@@ -17,14 +17,6 @@ jobs:
         run: |
           docker --version
 
-      - name: Start SonarQube
-        run: |
-          docker run -d --name sonarqube \
-            -p 9000:9000 \
-            -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
-            -e SONAR_JAVA_OPTS="-Xmx2g -Xms2g" \
-            sonarqube:lts
-
       - name: Wait for SonarQube to be ready
         run: |
           echo "Waiting for SonarQube to start..."
